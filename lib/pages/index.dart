@@ -1,346 +1,285 @@
 import 'package:flutter/material.dart';
+import 'package:medical_app/pages/general.dart';
+import 'package:medical_app/pages/widgets/bottom_navigation.dart';
 
-void main() {
-  runApp(MaterialApp(
-    home: Index(),
-  ));
+/// One entry in the specialty grid.
+class Specialty {
+  final String label;
+  final String asset;
+  final Color color;
+  final double imageWidth;
+
+  const Specialty({
+    required this.label,
+    required this.asset,
+    required this.color,
+    this.imageWidth = 90,
+  });
 }
+
+const List<Specialty> kSpecialties = [
+  Specialty(
+      label: 'General',
+      asset: 'assests/stet.png',
+      color: Color(0xff477cfe),
+      imageWidth: 70),
+  Specialty(
+      label: 'Dental',
+      asset: 'assests/teeth.png',
+      color: Color(0xfffdb45f),
+      imageWidth: 90),
+  Specialty(
+      label: 'Ophthalmology',
+      asset: 'assests/eye.png',
+      color: Color(0xff56b3d4),
+      imageWidth: 100),
+  Specialty(
+      label: 'Cardiology',
+      asset: 'assests/heart.png',
+      color: Color(0xffef7069),
+      imageWidth: 105),
+  Specialty(
+      label: 'Neurology',
+      asset: 'assests/brain.png',
+      color: Color(0xfffdb45f),
+      imageWidth: 100),
+  Specialty(
+      label: 'Laboratory',
+      asset: 'assests/laboo.png',
+      color: Color(0xff477cfe),
+      imageWidth: 55),
+];
 
 class Index extends StatefulWidget {
   const Index({super.key});
 
   @override
-  _IndexState createState() => _IndexState();
+  State<Index> createState() => _IndexState();
 }
 
 class _IndexState extends State<Index> {
-  int _selectedIndex = 0; // Track the selected index
+  int _selectedIndex = 0;
+  final _searchController = TextEditingController();
+  String _query = '';
 
-  // List of pages for bottom navigation
-  final List<Widget> _pages = [
-    // The content you already have for your main page
-    SingleChildScrollView(
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onTabSelected(int index) {
+    setState(() => _selectedIndex = index);
+  }
+
+  void _openSpecialty(Specialty specialty) {
+    // Only General has a detail screen so far; the rest need a doctor list
+    // backed by GET /api/doctors?specialization=...
+    if (specialty.label == 'General') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => General()),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${specialty.label} doctors are not available yet',
+          style: const TextStyle(fontFamily: 'Poppin'),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = [
+      _buildHome(),
+      const _Placeholder(label: 'Search'),
+      const _Placeholder(label: 'Notifications'),
+      const _Placeholder(label: 'Profile'),
+    ];
+
+    return Scaffold(
+      backgroundColor: const Color(0xffE5E5E5),
+      appBar: AppBar(
+        backgroundColor: const Color(0xffE5E5E5),
+        leading: const Padding(
+            padding: EdgeInsets.fromLTRB(20, 0, 0, 0), child: Icon(Icons.menu)),
+        title: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5),
+            child: Text("Hello User !!", style: TextStyle(fontFamily: 'Poppin'))),
+        actions: const [
+          Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 20, 0),
+              child: Icon(Icons.notifications))
+        ],
+      ),
+      body: pages[_selectedIndex],
+      bottomNavigationBar: CustomBottomNavigationBar(
+        selectedIndex: _selectedIndex,
+        onTabSelected: _onTabSelected,
+      ),
+    );
+  }
+
+  Widget _buildHome() {
+    final visible = _query.isEmpty
+        ? kSpecialties
+        : kSpecialties
+            .where((s) => s.label.toLowerCase().contains(_query.toLowerCase()))
+            .toList();
+
+    return SingleChildScrollView(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 35),
+        padding: const EdgeInsets.symmetric(horizontal: 35),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 10),
-            Text("Welcome Back",
+            const SizedBox(height: 10),
+            const Text("Welcome Back",
                 style: TextStyle(
                     fontFamily: 'Poppin',
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                     color: Color.fromARGB(255, 63, 151, 158))),
-            SizedBox(height: 5),
-            Text("What are you looking for?",
+            const SizedBox(height: 5),
+            const Text("What are you looking for?",
                 style: TextStyle(
                     fontFamily: 'Poppin',
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: Color(0xff565656))),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 boxShadow: [
                   BoxShadow(
-                    color:
-                        const Color.fromARGB(255, 42, 42, 42).withOpacity(0.5),
+                    color: const Color.fromARGB(255, 42, 42, 42)
+                        .withValues(alpha: 0.5),
                     spreadRadius: 3,
                     blurRadius: 4,
                     offset: const Offset(0, 3),
                   )
                 ],
-                color: Color.fromARGB(255, 232, 232, 232),
+                color: const Color.fromARGB(255, 232, 232, 232),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.search),
-                  SizedBox(width: 10),
+                  const Icon(Icons.search),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
-                      decoration: InputDecoration(
+                      controller: _searchController,
+                      onChanged: (value) => setState(() => _query = value),
+                      decoration: const InputDecoration(
                           hintText: "Search the Doctor",
                           hintStyle:
                               TextStyle(fontFamily: 'Poppin', fontSize: 17),
                           border: InputBorder.none),
                     ),
                   ),
+                  if (_query.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                    ),
                 ],
               ),
             ),
-            SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      width: 130,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Color(0xff477cfe),
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                              color: const Color.fromARGB(255, 0, 0, 0)
-                                  .withOpacity(0.5),
-                              spreadRadius: 1,
-                              blurRadius: 4,
-                              offset: const Offset(0, 3)),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Image.asset('assests/stet.png', width: 70),
-                          SizedBox(height: 1),
-                          Text("General",
-                              style: TextStyle(
-                                  fontFamily: 'Poppin',
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xff565656))),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      width: 130,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Color(0xff56b3d4),
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                              color: const Color(0xff56b3d4).withOpacity(0.5),
-                              spreadRadius: 1,
-                              blurRadius: 4,
-                              offset: const Offset(0, 3)),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Image.asset('assests/eye.png', width: 100),
-                          SizedBox(height: 1),
-                          Text("Optalmology",
-                              style: TextStyle(
-                                  fontFamily: 'Poppin',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xff565656))),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: 12,
-                    ),
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      width: 130,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Color(0xfffdb45f),
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xfffdb45f).withOpacity(0.5),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 3),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            'assests/brain.png',
-                            width: 100,
-                          ),
-                          SizedBox(
-                            height: 1,
-                          ),
-                          Text("Neurology",
-                              style: TextStyle(
-                                  fontFamily: 'Poppin',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xff565656))),
-                        ],
-                      ),
-                    ),
-                  ],
+            const SizedBox(height: 30),
+            if (visible.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Center(
+                  child: Text("No matching specialties",
+                      style: TextStyle(fontFamily: 'Poppin', fontSize: 16)),
                 ),
-                Column(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      width: 130,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Color(0xfffdb45f),
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color.fromARGB(255, 0, 0, 0)
-                                .withOpacity(0.5),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 3),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            'assests/teeth.png',
-                            width: 90,
-                          ),
-                          SizedBox(
-                            height: 1,
-                          ),
-                          Text("Dental",
-                              style: TextStyle(
-                                  fontFamily: 'Poppin',
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xff565656))),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: 12,
-                    ),
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      width: 130,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Color(0xffef7069),
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xff56b3d4).withOpacity(0.5),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 3),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            'assests/heart.png',
-                            width: 105,
-                          ),
-                          SizedBox(
-                            height: 1,
-                          ),
-                          Text(
-                            "Cardiology",
-                            style: TextStyle(
-                                fontFamily: 'Poppin',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xff565656)),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: 12,
-                    ),
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      width: 130,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Color(0xff477cfe),
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xfffdb45f).withOpacity(0.5),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 3),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            'assests/laboo.png',
-                            width: 55,
-                          ),
-                          SizedBox(
-                            height: 1,
-                          ),
-                          Text("Laboratory",
-                              style: TextStyle(
-                                  fontFamily: 'Poppin',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xff565656))),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              )
+            else
+              // A grid replaces the two hand-built columns, so the cards reflow
+              // instead of overflowing on narrow screens.
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 130 / 150,
+                children: visible
+                    .map((s) => _SpecialtyCard(
+                          specialty: s,
+                          onTap: () => _openSpecialty(s),
+                        ))
+                    .toList(),
+              ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
-    ),
-    Center(child: Text("Page 2 Content")), // Second page example
-    Center(child: Text("Page 3 Content")), // Third page example
-  ];
-
-  // Method to handle tab selection
-  void _onTabSelected(int index) {
-    setState(() {
-      _selectedIndex = index; // Update the selected index
-    });
+    );
   }
+}
+
+class _SpecialtyCard extends StatelessWidget {
+  final Specialty specialty;
+  final VoidCallback onTap;
+
+  const _SpecialtyCard({required this.specialty, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xffE5E5E5),
-      appBar: AppBar(
-        backgroundColor: Color(0xffE5E5E5),
-        leading: Padding(
-            padding: EdgeInsets.fromLTRB(20, 0, 0, 0), child: Icon(Icons.menu)),
-        title: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5),
-            child: Text("Hello User !!")),
-        actions: [
-          Padding(
-              padding: EdgeInsets.fromLTRB(0, 0, 20, 0),
-              child: Icon(Icons.notifications))
-        ],
+    return Material(
+      color: specialty.color,
+      borderRadius: BorderRadius.circular(15),
+      elevation: 4,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Image.asset(specialty.asset, width: specialty.imageWidth),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                specialty.label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontFamily: 'Poppin',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xff565656)),
+              ),
+            ],
+          ),
+        ),
       ),
-      body: _pages[_selectedIndex], // Display the content of the selected page
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex, // Keep track of selected tab
-        onTap: _onTabSelected, // Call the method when a tab is selected
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
-          ),
-        ],
+    );
+  }
+}
+
+class _Placeholder extends StatelessWidget {
+  final String label;
+
+  const _Placeholder({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        '$label is not built yet',
+        style: const TextStyle(fontFamily: 'Poppin', fontSize: 16),
       ),
     );
   }
