@@ -17,7 +17,7 @@
 | **Alternate backend** | Firebase (Auth + Cloud Firestore) — wired in `pubspec.yaml` and `lib/services/`, but not initialised |
 | **Target platforms** | Android, iOS, Web, Windows, macOS, Linux (all six scaffolded) |
 | **Maturity** | Early prototype / UI-first. Screens are static mockups; no screen is wired to either backend yet. |
-| **Repo state** | `medical-app/` is a git repo (1 commit: `344795a Initial commit`). `backend/` is **not** under version control. |
+| **Repo state** | Single git repo at `medical-app/`, remote `Keshan-D-Adhikari/medical-app`. `backend/` was moved inside it on 2026-08-03 and is now version-controlled. |
 
 **One-line assessment:** the UI shell and the REST API both exist and are individually coherent, but nothing connects them yet — every button is a `Navigator.push`, and the two candidate backends (Firebase and Express/Mongo) are both half-wired, with neither chosen.
 
@@ -27,12 +27,19 @@
 
 ```
 D:\keshan\medical-app-with-backend\
-├── medical-app\        # Flutter client  (git repo, branch: main)
-└── backend\            # Express + MongoDB REST API  (NOT version-controlled)
+└── medical-app\        # ← git repo root (origin: Keshan-D-Adhikari/medical-app)
+    ├── lib\            # Flutter client
+    ├── backend\        # Express + MongoDB REST API
+    └── ...             # android, ios, web, windows, macos, linux, test, assets
 ```
 
-The two are sibling folders, not a monorepo. There is no shared tooling, no
-workspace file, no docker-compose, and no CI configuration anywhere in the tree.
+Both halves live in one repository. `backend/` used to be a sibling of
+`medical-app/` and outside version control entirely; it was moved inside on
+2026-08-03 so the API has history and a backup.
+
+There is still no shared tooling — no workspace file, no docker-compose, and no
+CI configuration anywhere in the tree. The Flutter and Node halves are built and
+run independently.
 
 ---
 
@@ -148,13 +155,14 @@ medical-app/
 └── .dart_tool/                    # pub cache metadata
 ```
 
-### 4.2 `backend/` (Express API)
+### 4.2 `medical-app/backend/` (Express API)
 
 ```
 backend/
 ├── server.js                      # app bootstrap: db, middleware, route mounts, error handlers
 ├── package.json                   # name: medical-app-backend, main: server.js
-├── .env                           # MONGODB_URI, PORT, JWT_SECRET, NODE_ENV (untracked by design)
+├── .env                           # real secrets — gitignored, never committed
+├── .env.example                   # documented template, safe to commit
 ├── .gitignore                     # node_modules/, .env*
 ├── README.md                      # setup + endpoint documentation
 │
@@ -504,8 +512,9 @@ but the client's only reference to it targets the wrong path.
 25. **No state management, no models, no repository layer** on the client.
 26. **`lib/services/` is untracked in git** (`?? lib/services/` in `git status`) —
     it will be lost on a clean clone.
-27. **`backend/` is not under version control at all** — no `.git`, so the entire
-    server has no history and no backup.
+27. ~~**`backend/` is not under version control at all**~~ — **FIXED 2026-08-03.**
+    Moved to `medical-app/backend/` and committed. `.env` stays ignored; a
+    documented `.env.example` was added in its place.
 28. **Errors are swallowed** in `AuthService` — `print()` then `return null`, so
     the caller cannot distinguish "wrong password" from "network down".
 29. **Copy errors in shipped UI text** — "Get Stared", "Email Adress",
@@ -619,8 +628,7 @@ Then, in order:
 | Windows scaffold | 14 |
 | Linux scaffold | 9 |
 | Web scaffold | 7 |
-| **Tracked in git (client)** | **149** |
-| **Tracked in git (backend)** | **0 — not a repo** |
+| **Tracked in git** | client + backend, one repo since 2026-08-03 |
 
 ---
 
@@ -635,7 +643,7 @@ here is aspirational.
 `GET /api/patients/:id` allows the record's owner or staff, and returns 403
 otherwise. Both are paginated (`?page&limit`, limit capped at 100) so a single
 call can no longer dump the collection.
-→ [routes/patients.js](../backend/routes/patients.js), [patientController.js](../backend/controllers/patientController.js)
+→ [routes/patients.js](backend/routes/patients.js), [patientController.js](backend/controllers/patientController.js)
 
 ### 2. Role-based authorization added (was issue 16)
 
@@ -644,7 +652,7 @@ user's `role` and `isActive` from the database on every request rather than
 trusting a 7-day-old token claim, so a disabled or demoted account loses access
 immediately. Doctor-profile writes are gated to `doctor`/`admin`.
 Registration can no longer self-assign `admin`.
-→ [middleware/auth.js](../backend/middleware/auth.js), [authController.js](../backend/controllers/authController.js)
+→ [middleware/auth.js](backend/middleware/auth.js), [authController.js](backend/controllers/authController.js)
 
 ### 3. Login brute-force protection (was issue 20)
 
@@ -663,7 +671,7 @@ also refuses to boot without `MONGODB_URI`/`JWT_SECRET`, and rejects a
 `JWT_SECRET` shorter than 32 chars in production (was issue 19).
 Also: `cors()` now honours a `CORS_ORIGIN` allowlist (was issue 17), and JSON
 bodies are capped at 100 kb.
-→ [server.js](../backend/server.js)
+→ [server.js](backend/server.js)
 
 ### 5. Input validation on every profile endpoint (was part of issue 21's cluster)
 
@@ -746,9 +754,11 @@ Housekeeping: deleted the 0-byte `lib/pages/home` (issue 13) and fixed
 
 Issues **1** and **2** (Firebase never initialised, no Firebase config files),
 **12** (no appointment endpoints), **22** (`assests/` misspelling), **24** (no
-`ThemeData`), **25** (no state management), **27** (`backend/` not under version
-control), **28** (errors swallowed in the unused `AuthService`), **30** (client
-README is the Flutter template) and **31** (no CI) are untouched.
+`ThemeData`), **25** (no state management), **28** (errors swallowed in the
+unused `AuthService`), **30** (client README is the Flutter template) and **31**
+(no CI) are untouched.
+
+Issue **27** was resolved separately: `backend/` now lives inside this repo.
 
 Issues 1, 2 and 28 all live in the Firebase half of the codebase, which §10
 recommends deleting outright. That is a product decision, so nothing there was
