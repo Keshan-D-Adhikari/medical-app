@@ -1,5 +1,6 @@
+import 'pages/start_page.dart';
+
 import 'package:flutter/material.dart';
-import 'package:medical_app/pages/start_page.dart';
 
 void main() {
   runApp(MyApp());
