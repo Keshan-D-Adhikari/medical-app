@@ -1,17 +1,38 @@
-# medical_app
+# 🏥 Medical App (Flutter UI)
 
-A new Flutter project.
+A Flutter mobile app UI for booking and browsing medical services. This is an early-stage, front-end-only project.
 
-## Getting Started
+## Screens
 
-This project is a starting point for a Flutter application.
+- **Start page**: welcome screen with entry to login or sign-up
+- **Login / Sign-up**: forms with reusable input widgets
+- **Home**: greeting, search prompt and service categories (General, Ophthalmology, Neurology, Dental, Laboratory and more)
+- **General**: details page for the General category
+- **Bottom navigation**: Home, Search and Notifications tabs
 
-A few resources to get you started if this is your first Flutter project:
+## Project structure
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```
+lib/
+├── main.dart
+└── pages/
+    ├── start_page.dart
+    ├── login_page.dart
+    ├── signup_page.dart
+    ├── index.dart          # home screen + bottom navigation
+    ├── general.dart
+    └── widgets/
+        ├── bottom_navigation.dart
+        └── signup_input.dart
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# medical-app
+## Run locally
+
+```bash
+flutter pub get
+flutter run
+```
+
+## Status
+
+UI only: there is no backend or authentication yet. Planned next steps are connecting login and sign-up to Firebase and adding appointment booking.
